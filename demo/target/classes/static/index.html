@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akıllı Kütüphane | Otomasyon Paneli</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --vintage-brown: #3e2723;
+            --paper-white: #fdfaf6;
+            --gold-accent: #d4af37;
+            --sidebar-width: 280px;
+        }
+
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f1ea; color: #2c3e50; transition: 0.5s; }
+
+        /* SIDEBAR TASARIMI */
+        .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; background: var(--vintage-brown); color: #d7ccc8; padding: 20px; z-index: 1000; transition: 0.3s; }
+        .sidebar-brand { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold-accent); text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px; }
+        .nav-link { color: #bcaaa4; margin-bottom: 5px; border-radius: 12px; transition: 0.3s; cursor: pointer; display: flex; align-items: center; }
+        .nav-link i { width: 25px; }
+        .nav-link:hover, .nav-link.active { background: rgba(212,175,55,0.15); color: white !important; border-left: 5px solid var(--gold-accent); }
+
+        /* ANA İÇERİK */
+        .main-content { margin-left: var(--sidebar-width); padding: 40px; min-height: 100vh; }
+        .section-panel { display: none; animation: fadeIn 0.6s ease-in-out; }
+        .section-panel.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* KARTLAR VE GÖRSEL ÖĞELER */
+        .glass-card { background: white; border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 25px; transition: 0.3s; }
+        .glass-card:hover { box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+        .stat-card { border-left: 5px solid var(--gold-accent); padding: 15px; }
+        .penalty-text { color: #e63946; font-weight: 700; font-size: 2.2rem; }
+
+        /* TABLOLAR VE BUTONLAR */
+        .table thead th { background: #fdfaf6; color: var(--vintage-brown); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1.2px; border: none; padding: 15px; }
+        .table tbody td { padding: 15px; border-bottom: 1px solid #eee; }
+        .btn-gold { background: var(--gold-accent); color: var(--vintage-brown); font-weight: 600; border: none; border-radius: 12px; transition: 0.3s; padding: 10px 20px; }
+        .btn-gold:hover { background: #b8962d; color: white; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(212,175,55,0.3); }
+
+        /* ARAMA VE BADGE */
+        .search-container { position: relative; width: 100%; }
+        .search-box { border-radius: 15px; border: 1px solid #e0e0e0; padding: 12px 45px 12px 20px; width: 100%; transition: 0.3s; background: #fff; }
+        .search-box:focus { border-color: var(--gold-accent); outline: none; box-shadow: 0 0 15px rgba(212,175,55,0.1); }
+        .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--gold-accent); cursor: pointer; }
+        .user-badge { font-size: 0.75rem; font-weight: 600; padding: 6px 15px; border-radius: 50px; text-transform: uppercase; }
+
+        /* YAZAR KARTLARI */
+        .writer-item-card { border-left: 5px solid var(--gold-accent); background: #fff; padding: 20px; border-radius: 15px; transition: 0.3s; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
+        .writer-item-card:hover { transform: scale(1.03); background: var(--paper-white); }
+        .writer-icon { background: rgba(212,175,55,0.1); width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--gold-accent); margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand"><i class="fas fa-book-reader me-2"></i> KÜTÜPHANE</div>
+    <nav class="nav flex-column">
+        <a class="nav-link active" onclick="showSection('kitaplarSection')"><i class="fas fa-swatchbook me-2"></i> Kitap Koleksiyonu</a>
+        <a class="nav-link" onclick="showSection('kategoriSection')"><i class="fas fa-tags me-2"></i> Kategoriler</a>
+        <a class="nav-link" onclick="showSection('yazarSection')"><i class="fas fa-pen-fancy me-2"></i> Yazarlar</a>
+
+        <div id="adminLinks" class="d-none border-top mt-3 pt-3">
+            <a class="nav-link" onclick="showSection('userListSection')"><i class="fas fa-users-cog me-2"></i> Kullanıcı Yönetimi</a>
+            <a href="borclar.html" class="nav-link"><i class="fas fa-file-invoice-dollar me-2"></i> Tüm Borçlar Paneli</a>
+        </div>
+
+        <a class="nav-link" onclick="showSection('profilSection')" style="margin-top: auto;"><i class="fas fa-user-circle me-2"></i> Profilim & Kitaplarım</a>
+        <a class="nav-link text-danger mb-4" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i> Güvenli Çıkış</a>
+    </nav>
+</div>
+
+<div class="main-content">
+    <div class="dashboard-header glass-card">
+        <div>
+            <h4 class="fw-bold mb-0">Hoş geldin, <span id="displayUserName" class="text-primary">...</span></h4>
+            <span class="badge rounded-pill bg-dark mt-2" id="displayRole">Yükleniyor...</span>
+        </div>
+        <div id="adminActions" class="d-none d-flex gap-2">
+            <button class="btn btn-outline-dark px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addYazarModal">
+                <i class="fas fa-user-plus me-2"></i>Yazar Ekle
+            </button>
+            <button class="btn btn-gold px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                <i class="fas fa-plus-circle me-2"></i>Kitap Ekle
+            </button>
+        </div>
+    </div>
+
+    <div id="kitaplarSection" class="section-panel active">
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-list text-warning me-2"></i>Kitap Koleksiyonu</h5>
+                <div class="w-50 search-container">
+                    <input type="text" id="kitapSearch" class="search-box mb-0" placeholder="Kitap veya yazar ara..." onkeyup="filterBooks()">
+                    <i class="fas fa-search search-icon" onclick="filterBooks()"></i>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                    <tr>
+                        <th>Kitap Adı</th>
+                        <th>Yazar</th>
+                        <th>Kategori</th>
+                        <th>Günlük Ceza</th>
+                        <th>Stok</th>
+                        <th class="text-end">İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody id="kitapListesi"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="userListSection" class="section-panel">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-4"><i class="fas fa-users text-primary me-2"></i>Sistem Kullanıcıları</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                    <tr>
+                        <th>Ad Soyad</th>
+                        <th>E-posta</th>
+                        <th>Rol</th>
+                        <th class="text-end">İşlem</th>
+                    </tr>
+                    </thead>
+                    <tbody id="adminKullaniciListesi"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="kategoriSection" class="section-panel">
+        <div class="glass-card">
+            <h5 class="fw-bold mb-4">Kategori Keşfi</h5>
+            <div id="adminCatInput" class="row g-3 mb-4 d-none">
+                <div class="col-md-8"><input type="text" id="newCatName" class="form-control" placeholder="Yeni Kategori Adı..."></div>
+                <div class="col-md-4"><button class="btn btn-dark w-100" onclick="addCategory()">Ekle</button></div>
+            </div>
+            <div class="list-group shadow-sm" id="kategoriListesi"></div>
+        </div>
+    </div>
+
+    <div id="yazarSection" class="section-panel">
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-pen-nib text-warning me-2"></i>Yazar Portfolyosu</h5>
+                <div class="w-50 search-container">
+                    <input type="text" id="yazarSearch" class="search-box mb-0" placeholder="Yazar adına göre ara..." onkeyup="filterWriters()">
+                    <i class="fas fa-search search-icon" onclick="filterWriters()"></i>
+                </div>
+            </div>
+            <div class="row g-3" id="yazarListesi"></div>
+        </div>
+    </div>
+
+    <div id="profilSection" class="section-panel">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="glass-card h-100">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-file-invoice-dollar me-2 text-danger"></i>Borç & Ceza Detaylarım</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                            <tr>
+                                <th>Kitap</th>
+                                <th>Vade (1 DK)</th>
+                                <th>Durum</th>
+                                <th>Ceza</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                            </thead>
+                            <tbody id="userPenaltyTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card stat-card h-100 text-center">
+                    <h5 class="fw-bold mb-4">Finansal Özet</h5>
+                    <div class="mb-2">
+                        <span class="text-muted small">Ödenmemiş Toplam Borç</span>
+                        <h2 class="penalty-text" id="userTotalPenalty">0.00 ₺</h2>
+                    </div>
+                    <hr>
+                    <button class="btn btn-outline-success w-100 mb-3 py-2" onclick="fetchUserStats()">
+                        <i class="fas fa-sync-alt me-2"></i>Verileri Güncelle
+                    </button>
+                    <p class="text-muted italic small mb-0">İade işlemi borcu otomatik hesaplar.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addYazarModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold">Yeni Yazar Tanımla</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addYazarForm">
+                    <div class="mb-3">
+                        <label class="fw-bold small">Yazar Adı Soyadı</label>
+                        <input type="text" id="formYazarAd" class="form-control" placeholder="Örn: Sabahattin Ali" required>
+                    </div>
+                    <button type="submit" class="btn btn-gold w-100 py-2 mt-2">Yazarı Sisteme Kaydet</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBookModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-dark text-white" style="border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title fw-bold">Kitap & Ceza Tanımla</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addBookForm">
+                    <div class="mb-3"><label class="fw-bold small">Kitap Adı</label><input type="text" id="formKitapAdi" class="form-control" required></div>
+                    <div class="mb-3"><label class="fw-bold small">Yazar</label><input type="text" id="formYazar" class="form-control" required></div>
+                    <div class="mb-3"><label class="fw-bold small">Kategori</label><select id="formKategori" class="form-select" required></select></div>
+                    <div class="row">
+                        <div class="col-6 mb-3"><label class="fw-bold small">Stok</label><input type="number" id="formStok" class="form-control" value="5" min="1"></div>
+                        <div class="col-6 mb-3"><label class="fw-bold small text-danger">Günlük Ceza (₺)</label><input type="number" id="formCeza" class="form-control" value="5" min="1"></div>
+                    </div>
+                    <button type="submit" class="btn btn-gold w-100 py-2 mt-3">Sisteme Kaydet</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const API = "http://localhost:8080/api";
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        currentUser = JSON.parse(localStorage.getItem('user'));
+        if (!currentUser) { window.location.href = 'login.html'; return; }
+        document.getElementById('displayUserName').innerText = currentUser.adSoyad;
+        document.getElementById('displayRole').innerText = currentUser.rol;
+        if (currentUser.rol && currentUser.rol.trim().toUpperCase() === 'ADMIN') {
+            document.querySelectorAll('#adminLinks, #adminActions, #adminCatInput').forEach(el => el.classList.remove('d-none'));
+            fetchUsers();
+        }
+        loadInitialData();
+    });
+
+    async function loadInitialData() {
+        await fetchCategories();
+        await fetchBooks();
+        await fetchUserStats();
+    }
+
+    function showSection(id) {
+        document.querySelectorAll('.section-panel').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    }
+
+    // --- KULLANICI İŞLEMLERİ ---
+    async function fetchUsers() {
+        try {
+            const res = await fetch(`${API}/kullanicilar`);
+            const users = await res.json();
+            document.getElementById('adminKullaniciListesi').innerHTML = users.map(u => `
+                <tr>
+                    <td class="fw-bold">${u.adSoyad}</td>
+                    <td>${u.email}</td>
+                    <td><span class="badge bg-secondary user-badge">${u.rol}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteUser(${u.id})"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>`).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    async function deleteUser(id) {
+        if(!confirm("Kullanıcıyı silmek istediğinize emin misiniz?")) return;
+        const res = await fetch(`${API}/kullanicilar/${id}`, { method: 'DELETE' });
+        if(res.ok) fetchUsers();
+    }
+
+    // --- YAZAR EKLEME (SİMÜLASYON) ---
+    document.getElementById('addYazarForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const yazarAd = document.getElementById('formYazarAd').value;
+        alert("✅ Yazar '" + yazarAd + "' sisteme başarıyla tanımlandı. Bu yazar adına kitap eklediğinizde kartı oluşacaktır.");
+        bootstrap.Modal.getInstance(document.getElementById('addYazarModal')).hide();
+        document.getElementById('addYazarForm').reset();
+    });
+
+    // --- KİTAP KAYDETME (BACKEND 'id' İLE TAM UYUMLU) ---
+    document.getElementById('addBookForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            kitapAdi: document.getElementById('formKitapAdi').value,
+            yazar: document.getElementById('formYazar').value,
+            stokAdedi: parseInt(document.getElementById('formStok').value),
+            gunlukCeza: parseFloat(document.getElementById('formCeza').value),
+            kategori: { id: parseInt(document.getElementById('formKategori').value) } // Backend'deki getId() için 'id'
+        };
+        const res = await fetch(`${API}/kitaplar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if(res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addBookModal')).hide();
+            await fetchBooks();
+            alert("✅ Kitap ve Yazar Kaydedildi!");
+            document.getElementById('addBookForm').reset();
+        } else {
+            alert("❌ Kayıt hatası! Sunucu veriyi reddetti.");
+        }
+    });
+
+    // --- KİTAP LİSTELEME VE YAZAR KARTLARI ---
+    async function fetchBooks() {
+        try {
+            const res = await fetch(`${API}/kitaplar`);
+            const books = await res.json();
+            document.getElementById('kitapListesi').innerHTML = books.map(b => `
+                <tr>
+                    <td class="fw-bold">${b.kitapAdi}</td>
+                    <td>${b.yazar}</td>
+                    <td><span class="badge bg-light text-dark border">${b.kategori ? b.kategori.ad : '-'}</span></td>
+                    <td class="text-danger fw-bold">${b.gunlukCeza || 0} ₺</td>
+                    <td>${b.stokAdedi} Adet</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-gold rounded-pill px-3" onclick="oduncAl(${b.id})" ${b.stokAdedi <= 0 ? 'disabled' : ''}>Ödünç Al</button>
+                        ${currentUser.rol.trim().toUpperCase() === 'ADMIN' ? `<button class="btn btn-sm btn-danger rounded-pill ms-2" onclick="deleteKitap(${b.id})"><i class="fas fa-trash"></i></button>` : ''}
+                    </td>
+                </tr>`).join('');
+
+            const writers = {};
+            books.forEach(b => { if(!writers[b.yazar]) writers[b.yazar] = []; writers[b.yazar].push(b.kitapAdi); });
+            document.getElementById('yazarListesi').innerHTML = Object.keys(writers).map(w => `
+                <div class="col-md-4 writer-item">
+                    <div class="writer-item-card shadow-sm">
+                        <div class="writer-icon"><i class="fas fa-feather-alt"></i></div>
+                        <h6 class="fw-bold text-dark mb-1">${w}</h6>
+                        <p class="small text-muted mb-0"><b>Eser Sayısı:</b> ${writers[w].length}</p>
+                        <small class="text-muted mt-2 d-block"><b>Eserler:</b> ${writers[w].join(', ')}</small>
+                    </div>
+                </div>`).join('');
+        } catch (e) { }
+    }
+
+    // --- KATEGORİ İŞLEMLERİ ---
+    async function fetchCategories() {
+        const res = await fetch(`${API}/kategoriler`);
+        const cats = await res.json();
+        document.getElementById('formKategori').innerHTML = `<option value="">Seçin...</option>` +
+            cats.map(c => `<option value="${c.id}">${c.ad}</option>`).join('');
+        document.getElementById('kategoriListesi').innerHTML = cats.map(c => `
+            <div class="list-group-item d-flex justify-content-between align-items-center bg-transparent border-0 border-bottom py-3">
+                <span class="fw-medium">${c.ad}</span>
+                ${currentUser.rol.trim().toUpperCase() === 'ADMIN' ? `<button class="btn btn-sm btn-outline-danger border-0" onclick="deleteKategori(${c.id})"><i class="fas fa-trash"></i></button>` : ''}
+            </div>`).join('');
+    }
+
+    async function addCategory() {
+        const ad = document.getElementById('newCatName').value;
+        if(!ad) return;
+        await fetch(`${API}/kategoriler`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ad: ad}) });
+        document.getElementById('newCatName').value = '';
+        fetchCategories();
+    }
+
+    // --- FİLTRELEME SİSTEMİ ---
+    function filterBooks() {
+        const term = document.getElementById('kitapSearch').value.toLowerCase();
+        document.querySelectorAll('#kitapListesi tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    function filterWriters() {
+        const term = document.getElementById('yazarSearch').value.toLowerCase();
+        document.querySelectorAll('.writer-item').forEach(card => {
+            card.style.display = card.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    // --- ÖDÜNÇ VE CEZA HESAPLAMA ---
+    async function fetchUserStats() {
+        try {
+            const res = await fetch(`${API}/odunc-alma/aktif`);
+            const data = await res.json();
+            const myBooks = data.filter(o => o.kullanici.id === currentUser.id);
+            document.getElementById('userPenaltyTableBody').innerHTML = myBooks.map(o => {
+                const isLate = new Date(o.vadeTarihi) < new Date();
+                return `<tr>
+                    <td class="fw-bold">${o.kitap.kitapAdi}</td>
+                    <td><small>${o.vadeTarihi}</small></td>
+                    <td><span class="badge ${isLate ? 'bg-danger' : 'bg-success'}">${isLate ? 'Süre Doldu' : 'Süre Var'}</span></td>
+                    <td class="text-danger fw-bold">${o.hesaplananCeza.toFixed(2)} ₺</td>
+                    <td class="text-end"><button class="btn btn-sm btn-gold px-3" onclick="borcOde(${o.id})">İade Et</button></td>
+                </tr>`;
+            }).join('');
+            let total = 0; myBooks.forEach(o => total += (o.hesaplananCeza || 0));
+            document.getElementById('userTotalPenalty').innerText = total.toFixed(2) + " ₺";
+        } catch(e) { }
+    }
+
+    async function oduncAl(kitapId) {
+        await fetch(`${API}/odunc-alma/ver`, { method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ kullanici: { id: currentUser.id }, kitap: { id: kitapId } }) });
+        fetchBooks(); fetchUserStats();
+    }
+
+    async function borcOde(id) {
+        if(confirm("İade edilsin mi?")) {
+            await fetch(`${API}/odunc-alma/iade/${id}`, { method: 'PUT' });
+            fetchUserStats(); fetchBooks();
+        }
+    }
+
+    async function deleteKitap(id) {
+        if(confirm("Kitap silinsin mi?")) { await fetch(`${API}/kitaplar/${id}`, { method: 'DELETE' }); fetchBooks(); }
+    }
+
+    async function deleteKategori(id) {
+        if(confirm("Kategori silinsin mi?")) { await fetch(`${API}/kategoriler/${id}`, { method: 'DELETE' }); fetchCategories(); }
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+</script>
+</body>
+</html>

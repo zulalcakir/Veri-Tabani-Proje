@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kütüphane | Borç ve Ceza Yönetimi</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --lib-dark: #1a1a2e;
+            --lib-gold: #c0a080;
+            --lib-danger: #e94560;
+            --lib-success: #0f3460;
+            --lib-light: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--lib-light);
+            color: var(--lib-dark);
+        }
+
+        .header-section {
+            background: linear-gradient(rgba(26, 26, 46, 0.85), rgba(26, 26, 46, 0.85)),
+            url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 60px 0;
+            border-bottom: 5px solid var(--lib-gold);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .lib-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            background: white;
+            margin-top: -30px;
+        }
+
+        .card-header {
+            background-color: white !important;
+            border-bottom: 2px solid var(--lib-light);
+            padding: 20px 25px;
+        }
+
+        .table thead {
+            background-color: var(--lib-dark);
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        .bg-gecikme {
+            background-color: rgba(233, 69, 96, 0.08) !important;
+        }
+
+        .ceza-tutar {
+            font-weight: 700;
+            color: var(--lib-danger);
+        }
+
+        .btn-refresh {
+            background-color: var(--lib-gold);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-refresh:hover {
+            background-color: #a08560;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+
+<header class="header-section text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">Borç ve Ceza Yönetimi</h1>
+        <p class="lead mb-4">Kütüphane envanterindeki geciken kitapları anlık olarak takip edin.</p>
+        <a href="index.html" class="btn btn-outline-light px-4 py-2">
+            <i class="fas fa-home me-2"></i> Yönetim Paneline Dön
+        </a>
+    </div>
+</header>
+
+<div class="container mb-5">
+    <div class="card lib-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-book-reader me-2 text-primary"></i> Aktif Ödünç ve Ceza Listesi
+            </h5>
+            <button class="btn btn-refresh btn-sm shadow-sm" onclick="getBorcListesi()">
+                <i class="fas fa-sync-alt me-1"></i> Listeyi Güncelle
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th class="px-4 py-3">Kullanıcı Bilgisi</th>
+                        <th>Kitap / Yazar</th>
+                        <th>Son Teslim (Vade)</th>
+                        <th>Süre Durumu</th>
+                        <th>Ceza Tutarı</th>
+                    </tr>
+                    </thead>
+                    <tbody id="borcTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    async function getBorcListesi() {
+        const tableBody = document.getElementById('borcTableBody');
+
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 text-muted">Veriler çekiliyor...</div>
+        </td></tr>`;
+
+        try {
+            // Spring Boot'ta API yolu genellikle bu şekildedir.
+            const response = await fetch('/api/odunc-alma/aktif');
+            if (!response.ok) throw new Error('Sunucu hatası');
+
+            const data = await response.json();
+            tableBody.innerHTML = '';
+
+            if (data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="empty-state">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p>Harika! Şu an gecikmiş borç kaydı bulunmuyor.</p>
+                </td></tr>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const ceza = item.hesaplananCeza || 0;
+                const isGecikti = ceza > 0;
+                const tr = document.createElement('tr');
+                if (isGecikti) tr.classList.add('bg-gecikme');
+
+                tr.innerHTML = `
+                    <td class="px-4">
+                        <div class="fw-bold text-dark">${item.kullanici.adSoyad}</div>
+                        <small class="text-muted">${item.kullanici.email}</small>
+                    </td>
+                    <td>
+                        <div class="fw-bold">${item.kitap.kitapAdi}</div>
+                        <small class="text-secondary">${item.kitap.yazar}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border p-2">
+                            <i class="far fa-calendar-alt me-1"></i>${item.vadeTarihi}
+                        </span>
+                    </td>
+                    <td>
+                        ${isGecikti
+                    ? `<span class="badge bg-danger">Gecikmiş</span>`
+                    : `<span class="badge bg-success">Zamanında</span>`}
+                    </td>
+                    <td class="ceza-tutar">
+                        ${ceza > 0 ? ceza.toFixed(2) + ' ₺' : 'Borç Yok'}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        } catch (error) {
+            console.error("Hata:", error);
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-5">
+                <div class="alert alert-danger">Veriler yüklenemedi. Sunucunun çalıştığından emin olun.</div>
+            </td></tr>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', getBorcListesi);
+</script>
+</body>
+</html>
